@@ -177,7 +177,7 @@ struct VideoHandler {
     static func createVideoDecoder(initialNals: Data, codec: Int) -> (VTDecompressionSession, CMFormatDescription) {
         let nalHeader:[UInt8] = [0x00, 0x00, 0x00, 0x01]
         var videoFormat:CMFormatDescription? = nil
-        var err:OSStatus = 0
+        var err:OSStatus = kCVReturnSuccess
         
         // First two are the SPS and PPS
         // https://source.chromium.org/chromium/chromium/src/+/main:third_party/webrtc/sdk/objc/components/video_codec/nalu_rewriter.cc;l=228;drc=6f86f6af008176e631140e6a80e0a0bca9550143
@@ -272,7 +272,7 @@ struct VideoHandler {
             }
         }
             
-        if err != 0 {
+        if err != kCVReturnSuccess {
             fatalError("format?!")
         }
         print(videoFormat!)
@@ -295,7 +295,7 @@ struct VideoHandler {
 
         var decompressionSession:VTDecompressionSession? = nil
         err = VTDecompressionSessionCreate(allocator: nil, formatDescription: videoFormat!, decoderSpecification: videoDecoderSpecification as CFDictionary, imageBufferAttributes: destinationImageBufferAttributes as CFDictionary, outputCallback: nil, decompressionSessionOut: &decompressionSession)
-        if err != 0 {
+        if err != kCVReturnSuccess {
             fatalError("format?!")
         }
         
@@ -403,7 +403,7 @@ struct VideoHandler {
     private static func annexBBufferToCMSampleBuffer(buffer: Data, videoFormat: CMFormatDescription) -> CMSampleBuffer {
         // no SPS/PPS, handled with the initial nals
         
-        var err: OSStatus = 0
+        var err: OSStatus = kCVReturnSuccess
         
         let naluIndices = findNaluIndices(buffer: buffer)
         
@@ -414,7 +414,7 @@ struct VideoHandler {
         var contiguousBuffer: CMBlockBuffer!
         if !CMBlockBufferIsRangeContiguous(blockBuffer, atOffset: 0, length: 0) {
             err = CMBlockBufferCreateContiguous(allocator: nil, sourceBuffer: blockBuffer, blockAllocator: nil, customBlockSource: nil, offsetToData: 0, dataLength: 0, flags: 0, blockBufferOut: &contiguousBuffer)
-            if err != 0 {
+            if err != kCVReturnSuccess {
                 fatalError("CMBlockBufferCreateContiguous")
             }
         } else {
@@ -424,7 +424,7 @@ struct VideoHandler {
         var blockBufferSize = 0
         var dataPtr: UnsafeMutablePointer<Int8>!
         err = CMBlockBufferGetDataPointer(contiguousBuffer, atOffset: 0, lengthAtOffsetOut: nil, totalLengthOut: &blockBufferSize, dataPointerOut: &dataPtr)
-        if err != 0 {
+        if err != kCVReturnSuccess {
             fatalError("CMBlockBufferGetDataPointer")
         }
         
@@ -444,7 +444,7 @@ struct VideoHandler {
         
         var sampleBuffer: CMSampleBuffer!
         err = CMSampleBufferCreate(allocator: nil, dataBuffer: contiguousBuffer, dataReady: true, makeDataReadyCallback: nil, refcon: nil, formatDescription: videoFormat, sampleCount: 1, sampleTimingEntryCount: 0, sampleTimingArray: nil, sampleSizeEntryCount: 0, sampleSizeArray: nil, sampleBufferOut: &sampleBuffer)
-        if err != 0 {
+        if err != kCVReturnSuccess {
             fatalError("CMSampleBufferCreate")
         }
         
@@ -452,14 +452,14 @@ struct VideoHandler {
     }
     
     static func feedVideoIntoDecoder(decompressionSession: VTDecompressionSession, nals: Data, timestamp: UInt64, videoFormat: CMFormatDescription, callback: @escaping (_ imageBuffer: CVImageBuffer?) -> Void) {
-        var err:OSStatus = 0
+        var err:OSStatus = kCVReturnSuccess
         let sampleBuffer = annexBBufferToCMSampleBuffer(buffer: nals, videoFormat: videoFormat)
         err = VTDecompressionSessionDecodeFrame(decompressionSession, sampleBuffer: sampleBuffer, flags: ._EnableAsynchronousDecompression, infoFlagsOut: nil) { (status: OSStatus, infoFlags: VTDecodeInfoFlags, imageBuffer: CVImageBuffer?, taggedBuffers: [CMTaggedBuffer]?, presentationTimeStamp: CMTime, presentationDuration: CMTime) in
             //print(status, infoFlags, imageBuffer, taggedBuffers, presentationTimeStamp, presentationDuration)
             //print("status: \(status), image_nil?: \(imageBuffer == nil), infoFlags: \(infoFlags)")
             callback(imageBuffer)
         }
-        if err != 0 {
+        if err != kCVReturnSuccess {
             //fatalError("VTDecompressionSessionDecodeFrame")
         }
     }

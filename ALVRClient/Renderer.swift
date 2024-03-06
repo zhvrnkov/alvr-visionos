@@ -128,7 +128,7 @@ class Renderer {
             fatalError("Unable to load texture. Error info: \(error)")
         }
         
-        if CVMetalTextureCacheCreate(nil, nil, self.device, nil, &metalTextureCache) != 0 {
+        if CVMetalTextureCacheCreate(nil, nil, self.device, nil, &metalTextureCache) != kCVReturnSuccess {
             fatalError("CVMetalTextureCacheCreate")
         }
         fullscreenQuadVertices.withUnsafeBytes {
@@ -617,7 +617,7 @@ class Renderer {
         
         for i in 0...1 {
             var textureOut:CVMetalTexture! = nil
-            var err:OSStatus = 0
+            var err:OSStatus = kCVReturnSuccess
             let width = CVPixelBufferGetWidth(pixelBuffer)
             let height = CVPixelBufferGetHeight(pixelBuffer)
             if i == 0 {
@@ -629,7 +629,7 @@ class Renderer {
                     nil, metalTextureCache, pixelBuffer, nil, .rg8Unorm,
                     width/2, height/2, 1, &textureOut);
             }
-            if err != 0 {
+            if err != kCVReturnSuccess {
                 fatalError("CVMetalTextureCacheCreateTextureFromImage \(err)")
             }
             guard let metalTexture = CVMetalTextureGetTexture(textureOut) else {
@@ -640,8 +640,8 @@ class Renderer {
         //let test = Unmanaged.passUnretained(pixelBuffer).toOpaque()
         //print("draw buf: \(test)")
         
-        renderEncoder.setVertexBuffer(fullscreenQuadBuffer, offset: 0, index: VertexAttribute.position.rawValue)
-        renderEncoder.setVertexBuffer(fullscreenQuadBuffer, offset: (3*4)*4, index: VertexAttribute.texcoord.rawValue)
+        renderEncoder.setVertexBuffer(fullscreenQuadBuffer, offset: 0, index: BufferIndex.meshPositions.rawValue)
+        renderEncoder.setVertexBuffer(fullscreenQuadBuffer, offset: (3*4)*4, index: BufferIndex.meshGenerics.rawValue)
         renderEncoder.drawPrimitives(type: .triangleStrip, vertexStart: 0, vertexCount: 4)
         renderEncoder.popDebugGroup()
         renderEncoder.endEncoding()
@@ -739,8 +739,8 @@ class Renderer {
         for plane in WorldTracker.shared.planeAnchors {
             let plane = plane.value
             let faces = plane.geometry.meshFaces
-            renderEncoder.setVertexBuffer(plane.geometry.meshVertices.buffer, offset: 0, index: VertexAttribute.position.rawValue)
-            renderEncoder.setVertexBuffer(plane.geometry.meshVertices.buffer, offset: 0, index: VertexAttribute.texcoord.rawValue)
+            renderEncoder.setVertexBuffer(plane.geometry.meshVertices.buffer, offset: 0, index: BufferIndex.meshPositions.rawValue)
+            renderEncoder.setVertexBuffer(plane.geometry.meshVertices.buffer, offset: 0, index: BufferIndex.meshGenerics.rawValue)
             
             //self.updateGameStateForVideoFrame(drawable: drawable, framePose: framePose, planeTransform: plane.originFromAnchorTransform)
             selectNextPlaneUniformBuffer()
@@ -823,7 +823,7 @@ class Renderer {
         let textureTypes = VideoHandler.getTextureTypesForFormat(CVPixelBufferGetPixelFormatType(pixelBuffer))
         for i in 0...1 {
             var textureOut:CVMetalTexture! = nil
-            var err:OSStatus = 0
+            var err:OSStatus = kCVReturnSuccess
             let width = CVPixelBufferGetWidth(pixelBuffer)
             let height = CVPixelBufferGetHeight(pixelBuffer)
             if i == 0 {
@@ -835,7 +835,7 @@ class Renderer {
                     nil, metalTextureCache, pixelBuffer, nil, textureTypes[i],
                     width/2, height/2, 1, &textureOut);
             }
-            if err != 0 {
+            if err != kCVReturnSuccess {
                 fatalError("CVMetalTextureCacheCreateTextureFromImage \(err)")
             }
             guard let metalTexture = CVMetalTextureGetTexture(textureOut) else {
@@ -844,8 +844,8 @@ class Renderer {
             renderEncoder.setFragmentTexture(metalTexture, index: i)
         }
         
-        renderEncoder.setVertexBuffer(fullscreenQuadBuffer, offset: 0, index: VertexAttribute.position.rawValue)
-        renderEncoder.setVertexBuffer(fullscreenQuadBuffer, offset: (3*4)*4, index: VertexAttribute.texcoord.rawValue)
+        renderEncoder.setVertexBuffer(fullscreenQuadBuffer, offset: 0, index: BufferIndex.meshPositions.rawValue)
+        renderEncoder.setVertexBuffer(fullscreenQuadBuffer, offset: (3*4)*4, index: BufferIndex.meshGenerics.rawValue)
         renderEncoder.drawPrimitives(type: .triangleStrip, vertexStart: 0, vertexCount: 4)
         renderEncoder.popDebugGroup()
         renderEncoder.endEncoding()

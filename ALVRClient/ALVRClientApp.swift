@@ -11,7 +11,7 @@ import CompositorServices
 struct ContentStageConfiguration: CompositorLayerConfiguration {
     func makeConfiguration(capabilities: LayerRenderer.Capabilities, configuration: inout LayerRenderer.Configuration) {
         configuration.depthFormat = .depth32Float
-        configuration.colorFormat = .bgra8Unorm_srgb
+        configuration.colorFormat = .rgba16Float
     
         let foveationEnabled = capabilities.supportsFoveation
         configuration.isFoveationEnabled = foveationEnabled
@@ -20,8 +20,6 @@ struct ContentStageConfiguration: CompositorLayerConfiguration {
         let supportedLayouts = capabilities.supportedLayouts(options: options)
         
         configuration.layout = supportedLayouts.contains(.layered) ? .layered : .dedicated
-        
-        configuration.colorFormat = .rgba16Float
     }
 }
 #endif
@@ -228,7 +226,7 @@ struct Main {
         // https://source.chromium.org/chromium/chromium/src/+/main:third_party/webrtc/sdk/objc/components/video_codec/nalu_rewriter.cc;l=228;drc=6f86f6af008176e631140e6a80e0a0bca9550143
         
         var videoFormat:CMFormatDescription? = nil
-        var err:OSStatus = 0
+        var err:OSStatus = kCVReturnSuccess
         err = firstTwoNalsAndRest[0].withUnsafeBytes { a in
             firstTwoNalsAndRest[1].withUnsafeBytes { b in
                 let parameterSetPointers = [unsafeBitCast(a.baseAddress! + 4, to: UnsafePointer<UInt8>.self), unsafeBitCast(b.baseAddress! + 4, to: UnsafePointer<UInt8>.self)]
@@ -238,7 +236,7 @@ struct Main {
         }
 
 
-        if err != 0 {
+        if err != kCVReturnSuccess {
             fatalError("format?!")
         }
         print(videoFormat)
@@ -248,7 +246,7 @@ struct Main {
 
         var decompressionSession:VTDecompressionSession? = nil
         err = VTDecompressionSessionCreate(allocator: nil, formatDescription: videoFormat!, decoderSpecification: videoDecoderSpecification as CFDictionary, imageBufferAttributes: destinationImageBufferAttributes as CFDictionary, outputCallback: nil, decompressionSessionOut: &decompressionSession)
-        if err != 0 {
+        if err != kCVReturnSuccess {
             fatalError("format?!")
         }
         print(decompressionSession)
